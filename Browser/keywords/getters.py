@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from typing import Any, List, Optional, Union
 
@@ -545,26 +559,26 @@ class Getters(LibraryComponent):
         assertion_operator: Optional[AssertionOperator] = None,
         assertion_expected: Any = None,
     ):
-        """ Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
+        """Gets elements size and location as an object {x: float, y: float, width: float, height: float}.
 
-            ``selector`` <str> Selector from which shall be retrieved. **Required**
+        ``selector`` <str> Selector from which shall be retrieved. **Required**
 
-            ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
-            If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
-            otherwise it will just return the single value selected by the key.
-            Note: If a single value is retrieved, an assertion does *not* need a ``validate``
-            combined with a cast of ``value``.
+        ``key`` < ``x`` | ``y`` | ``width`` | ``height`` | ``ALL`` > Optionally filters the returned values.
+        If keys is set to ``ALL``(default) it will return the BoundingBox as Dictionary,
+        otherwise it will just return the single value selected by the key.
+        Note: If a single value is retrieved, an assertion does *not* need a ``validate``
+        combined with a cast of ``value``.
 
-            See `Assertions` for further details for the assertion arguments. Defaults to None.
+        See `Assertions` for further details for the assertion arguments. Defaults to None.
 
-            Example use:
-            | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
-            | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
-            | ${x}=               Get BoundingBox    id=element    x            # filtered
-            | Log                 X: ${x}                                       # X: 559.09375
-            | # Assertions:
-            | Get BoundingBox     id=element         width         >    180
-            | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
+        Example use:
+        | ${bounding_box}=    Get BoundingBox    id=element                 # unfiltered
+        | Log                 ${bounding_box}                               # {'x': 559.09375, 'y': 75.5, 'width': 188.796875, 'height': 18}
+        | ${x}=               Get BoundingBox    id=element    x            # filtered
+        | Log                 X: ${x}                                       # X: 559.09375
+        | # Assertions:
+        | Get BoundingBox     id=element         width         >    180
+        | Get BoundingBox     id=element         ALL           validate    value['x'] > value['y']*2
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.GetBoundingBox(Request.ElementSelector(selector=selector))

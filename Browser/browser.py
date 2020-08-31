@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import re
 from concurrent.futures._base import Future
@@ -592,7 +606,7 @@ class Browser(DynamicCore):
                 catalog_before_test = self._execution_stack.pop()
                 self._prune_execution_stack(catalog_before_test)
             except AssertionError as e:
-                logger.console(f"Test Case: {name}, End Test: {e}")
+                logger.warn(f"Test Case: {name}, End Test: {e}")
 
     def _end_suite(self, name, attrs):
         if self._auto_closing_level != AutoClosingLevel.MANUAL:
@@ -626,11 +640,10 @@ class Browser(DynamicCore):
         ]
         new_page_ids = [p for p in pages_after if p not in pages_before]
         for page_id, ctx_id in new_page_ids:
-            self._playwright_state.switch_context(ctx_id)
-            self._playwright_state.switch_page(page_id)
-            self._playwright_state.close_page()
+            self._playwright_state.close_page(page_id, ctx_id)
         # try to set active page and context back to right place.
-        for browser in catalog_after:
+        # Not needed now that active page and context are just stack heads
+        """ for browser in catalog_after:
             if browser["activeBrowser"]:
                 activeContext = browser.get("activeContext", None)
                 activePage = browser.get("activePage", None)
@@ -638,6 +651,7 @@ class Browser(DynamicCore):
                     self._playwright_state.switch_context(activeContext)
                     if not (activePage, activeContext) in new_page_ids:
                         self._playwright_state.switch_page(activePage)
+        """
 
     def run_keyword(self, name, args, kwargs=None):
         try:

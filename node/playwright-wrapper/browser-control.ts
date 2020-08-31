@@ -1,3 +1,17 @@
+// Copyright 2020-     Robot Framework Foundation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import { BrowserContext, Page } from 'playwright';
 import { ServerUnaryCall, sendUnaryData } from 'grpc';
 
@@ -36,11 +50,11 @@ export async function takeScreenshot(
     const selector = call.request.getSelector();
     if (selector) {
         const elem = await determineElement(state, selector, callback);
-        exists(elem, callback, `Tried to capture element screenshot, element '${selector}' wasn't found`);
+        exists(elem, callback, `Tried to capture element screenshot, element '${selector}' wasn't found.`);
         await elem.screenshot({ path: path });
     } else {
         const page = state.getActivePage();
-        exists(page, callback, 'Tried to take screenshot, no page was open');
+        exists(page, callback, 'Tried to take screenshot, but no page was open.');
         await invokeOnPage(page, callback, 'screenshot', { path: path });
     }
     const message = 'Screenshot succesfully captured to: ' + path;

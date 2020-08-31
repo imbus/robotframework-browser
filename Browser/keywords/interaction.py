@@ -1,3 +1,17 @@
+# Copyright 2020-     Robot Framework Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import json
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -8,9 +22,9 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import logger
 from ..utils.data_types import (
-    AlertAction,
     BoundingBox,
     Coordinates,
+    DialogAction,
     KeyAction,
     KeyboardInputAction,
     KeyboardModifier,
@@ -138,7 +152,7 @@ class Interaction(LibraryComponent):
         supported input keys.
         [https://github.com/microsoft/playwright/blob/master/docs/api.md#pagepressselector-key-options | Playwright docs for press.]
 
-        Example: 
+        Example:
 
         | # Keyword       Selector                    *Keys
         | Press Keys      //*[@id="username_field"]    h    e   l   o   ArrowLeft   l
@@ -162,7 +176,7 @@ class Interaction(LibraryComponent):
         self,
         selector: str,
         button: MouseButton = MouseButton.left,
-        click_count: int = 1,
+        clickCount: int = 1,
         delay: Optional[str] = None,
         position_x: Optional[float] = None,
         position_y: Optional[float] = None,
@@ -180,9 +194,19 @@ class Interaction(LibraryComponent):
 
         ``selector`` <str> Selector element to click. **Required**
 
+        ``button`` < ``left`` | ``middle`` |  ``right``> The button that shall be used for clicking.
+
+        ``clickCount`` <int> How many time shall be clicked.
+
+        ``delay`` <robot time str> Time to wait between mousedown and mouseup and next click.
+
+        *Caution: be aware that if the delal leats to a total time that exceets the timeout, the keyword fails*
+
         ``position_x`` & ``position_y`` <float> A point to click relative to the
         top-left corner of element boundingbox. Only positive values within the boundingbox are allowed.
         If not specified, clicks to some visible point of the element.
+
+        *Caution: even with 0, 0 might click a few pixels off from the corner of the boundingbox. Click uses detection to find the first clickable point.*
 
         ``force`` <bool> Set to True to skip Playwright's [https://github.com/microsoft/playwright/blob/master/docs/actionability.md | Actionability checks].
 
@@ -192,16 +216,20 @@ class Interaction(LibraryComponent):
         If not specified, currently pressed modifiers are used.
         """
         with self.playwright.grpc_channel() as stub:
-            options = {"button": button.name, "clickCount": click_count, "force": force}
+            options = {
+                "button": button.name,
+                "clickCount": clickCount,
+                "force": force,
+                "noWaitAfter": noWaitAfter,
+            }
             if delay:
                 options["delay"] = timestr_to_millisecs(delay)
-            if position_x and position_y:
+            # Without the != None 0 being falsy causes issues
+            if position_x is not None and position_y is not None:
                 positions: Dict[str, object] = {"x": position_x, "y": position_y}
                 options["position"] = positions
             if modifiers:
                 options["modifiers"] = [m.name for m in modifiers]
-            if noWaitAfter:
-                options["noWaitAfter"] = noWaitAfter
             options_json = json.dumps(options)
             logger.debug(f"Click Options are: {options_json}")
             response = stub.ClickWithOptions(
@@ -235,7 +263,7 @@ class Interaction(LibraryComponent):
 
         ``click_count`` <int> Defaults to 1.
 
-        ``delay`` <robot time> Time to wait between mousedown and mouseup in milliseconds.
+        ``delay`` <robot time str> Time to wait between mousedown and mouseup.
         Defaults to 0.
 
         ``position_x`` & ``position_y`` <int> A point to click relative to the
@@ -375,7 +403,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def upload_file(self, path: str):
-        """ Upload file from ``path`` into next file chooser dialog on page.
+        """Upload file from ``path`` into next file chooser dialog on page.
 
         ``path`` <str> Path to file to be uploaded.
 
@@ -392,8 +420,8 @@ class Interaction(LibraryComponent):
             logger.debug(response.log)
 
     @keyword(tags=["PageContent"])
-    def handle_alert(self, action: AlertAction, prompt_input: str = ""):
-        """ Handle next dialog on page with ``action``. Dialog can be any of alert,
+    def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
+        """Handle next dialog on page with ``action``. Dialog can be any of alert,
         beforeunload, confirm or prompt.
 
             ``action`` < ``acceppt`` | ``dismiss`` > How to handle the alert. **Required**
@@ -403,7 +431,7 @@ class Interaction(LibraryComponent):
         """
 
         with self.playwright.grpc_channel() as stub:
-            if prompt_input and action is not AlertAction.accept:
+            if prompt_input and action is not DialogAction.accept:
                 raise ValueError("prompt_input is only valid if action is 'accept'")
             response = stub.HandleAlert(
                 Request().AlertAction(alertAction=action.name, promptInput=prompt_input)
@@ -420,7 +448,7 @@ class Interaction(LibraryComponent):
         clickCount: int = 1,
         delay: int = 0,
     ):
-        """ Click, hold a mouse button down or release it.
+        """Click, hold a mouse button down or release it.
 
         Moving the mouse between holding down and releasing it for example is possible with `Mouse Move`.
 
@@ -532,13 +560,13 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def mouse_move(self, x: float, y: float, steps: int = 1):
-        """ Instead of selectors command mouse with coordinates.
-            The Click commands will leave the virtual mouse on the specified coordinates.
+        """Instead of selectors command mouse with coordinates.
+        The Click commands will leave the virtual mouse on the specified coordinates.
 
-            ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
-            of the page.
+        ``x`` <float> ``y`` <float> are absolute coordinates starting at the top left
+        of the page.
 
-            ``steps`` <int> Number of intermediate steps for the mouse event.
+        ``steps`` <int> Number of intermediate steps for the mouse event.
         """
         with self.playwright.grpc_channel() as stub:
             body: MouseOptionsDict = {"x": x, "y": y, "options": {"steps": steps}}
@@ -548,7 +576,7 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def keyboard_key(self, action: KeyAction, key: str):
-        """ Press a keyboard key on the virtual keyboard or set a key up or down.
+        """Press a keyboard key on the virtual keyboard or set a key up or down.
 
         ``action`` < ``up`` | ``down`` | ``press`` > Determine whether the key should be released,
         hold or pressed. ``down`` or ``up`` are useful for combinations i.e. with Shift.
@@ -582,19 +610,19 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=["Setter", "PageContent"])
     def keyboard_input(self, action: KeyboardInputAction, input: str, delay=0):
-        """ Input text into page with virtual keyboard.
+        """Input text into page with virtual keyboard.
 
-            ``action`` < ``insertText`` | ``type`` > **Required**
+        ``action`` < ``insertText`` | ``type`` > **Required**
 
-                - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
+            - ``insertText`` Dispatches only input event, does not emit the keydown, keyup or keypress events.
 
-                - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
+            - ``type`` Sends a keydown, keypress/input, and keyup event for each character in the text.
 
-            ``input`` <str> The inputstring to be typed. No special keys possible. **Required**
+        ``input`` <str> The inputstring to be typed. No special keys possible. **Required**
 
-            Note: To press a special key, like Control or ArrowDown, use keyboard.press.
-            Modifier keys DO NOT effect these methods. For testing modifier effects use single key
-            presses with ``Keyboard Key  press``
+        Note: To press a special key, like Control or ArrowDown, use keyboard.press.
+        Modifier keys DO NOT effect these methods. For testing modifier effects use single key
+        presses with ``Keyboard Key  press``
 
         """
         with self.playwright.grpc_channel() as stub:
