@@ -70,6 +70,7 @@ class Control(LibraryComponent):
         self,
         filename: str = "robotframework-browser-screenshot-{index}",
         selector: str = "",
+        fullPage: bool = False,
     ):
         """Takes a screenshot of the current window and saves it to ``path``. Saves it as a png.
 
@@ -81,25 +82,29 @@ class Control(LibraryComponent):
 
         ``selector`` <str> Take a screenshot of the element matched by selector.
         If not provided take a screenshot of current viewport.
+
+        ``fullPage`` <bool> When True, takes a screenshot of the full scrollable page,
+        instead of the currently visible viewport. Defaults to False.
         """
         if self._is_embed(filename):
             logger.debug("Embedding image to log.html.")
         else:
             logger.debug(f"Using {filename} to take screenshot.")
-        file_path = self._take_screenshot(filename, selector)
+        file_path = self._take_screenshot(filename, selector, fullPage)
         if self._is_embed(filename):
-            return self._emmed_to_log(file_path)
+            return self._embed_to_log(file_path)
         return self._log_image_link(file_path)
 
     def _log_image_link(self, file_path: str) -> str:
         relative_path = get_link_path(file_path, self.library.outputdir)
         logger.info(
-            f"Saved screenshot in <a href='{relative_path}'>{relative_path}</a>",
+            '</td></tr><tr><td colspan="3">'
+            f'<a href="{relative_path}"><img src="{relative_path}" width="800px"></a>',
             html=True,
         )
         return file_path
 
-    def _emmed_to_log(self, file_path):
+    def _embed_to_log(self, file_path):
         png = Path(file_path)
         with png.open("rb") as png_file:
             encoded_string = base64.b64encode(png_file.read())
@@ -117,12 +122,12 @@ class Control(LibraryComponent):
             logger.warn(f"Could not remove {png}")
         return "EMBED"
 
-    def _take_screenshot(self, filename: str, selector: str) -> str:
+    def _take_screenshot(self, filename: str, selector: str, fullPage: bool) -> str:
         string_path_no_extension = str(self._get_screenshot_path(filename))
         with self.playwright.grpc_channel() as stub:
             response = stub.TakeScreenshot(
                 Request().ScreenshotOptions(
-                    path=string_path_no_extension, selector=selector
+                    path=string_path_no_extension, selector=selector, fullPage=fullPage
                 )
             )
         logger.debug(response.log)
@@ -192,4 +197,11 @@ class Control(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.SetOffline(Request().Bool(value=offline))
+            logger.info(response.log)
+
+    @keyword(tags=["Setter", "BrowserControl"])
+    def reload(self):
+        """Reloads current active page."""
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Reload(Request().Empty())
             logger.info(response.log)

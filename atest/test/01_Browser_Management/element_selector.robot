@@ -12,7 +12,7 @@ Get Element
 
 Get Element With Nonmatching child selector
     ${ref}=    Get Element    select[name="preferred_channel"]
-    Run Keyword And Expect Error    Could not find element with selector `.notamatch` within timeout.
+    Run Keyword And Expect Error    Could not find element with selector `*.notamatch` within timeout.
     ...    Get Property    ${ref}>> .notamatch    value
 
 Using Invalid Element Reference Fails
@@ -41,6 +41,15 @@ Get Elements when only 1 match
 Get Elements Include Hidden
     ${refs}=    Get Elements    input
     Should Be Equal As Integers    12    ${{ len(${refs}) }}
+
+Get Elements Should Not Fail If Element Is Not Found
+    ${refs}=    Get Elements    xpath=//not_here
+    Should Be Empty    ${refs}
+
+Get Elements Should Fail With Invalid Selector
+    Run Keyword And Expect Error
+    ...    * Unknown engine "invalid" *
+    ...    Get Elements    invalid=//foobar
 
 Get Element and Click
     New Page    ${LOGIN_URL}

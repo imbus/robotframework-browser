@@ -5,9 +5,6 @@ import sys
 
 sys.path.append("Browser")
 
-from Browser import VERSION  # noqa
-
-
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
@@ -19,8 +16,8 @@ install_requires = open(os.path.join("Browser", "requirements.txt")).readlines()
 
 setup_kwargs = {
     "name": "robotframework-browser",
-    "version": VERSION,
-    "description": "",
+    "version": "1.4.0",
+    "description": "Robot Framework Browser library powered by Playwright. Aiming for speed, reliability and visibility.",
     "long_description": long_description,
     "long_description_content_type": "text/markdown",
     "author": "MarketSquare - Robot Framework community",
@@ -34,7 +31,7 @@ setup_kwargs = {
     "entry_points": {"console_scripts": ["rfbrowser=Browser.entry:run"]},
     "python_requires": ">=3.7,<4.0",
     "classifiers": [
-        "Development Status :: 1 - Planning",
+        "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",

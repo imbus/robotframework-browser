@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from enum import Enum
 from typing import Dict, List, TypeVar
 
 
@@ -21,7 +21,11 @@ def locals_to_params(args: Dict) -> Dict:
         if key == "self":
             continue
         if args[key] is not None:
-            copy[key] = args[key]
+            value = args[key]
+            if isinstance(value, Enum):
+                copy[key] = value.name
+            else:
+                copy[key] = value
     return copy
 
 
@@ -29,18 +33,18 @@ def locals_to_params(args: Dict) -> Dict:
 T = TypeVar("T")
 
 
-def find_by_id(_id: str, item_list: List[Dict[str, T]]) -> Dict[str, T]:
+def find_by_id(_id: str, item_list: List[Dict[str, T]], log_error=True) -> Dict[str, T]:
     from ..utils import logger
 
     def filter_fn(item):
-        # logger.info(item)
         return item["id"] == _id
 
     try:
         filtered = filter(filter_fn, item_list)
         return next(filtered)
     except StopIteration:
-        logger.error(
-            f"No item with correct id {_id}. Existing ids: {[item['id'] for item in item_list]}"
-        )
+        if log_error:
+            logger.error(
+                f"No item with correct id {_id}. Existing ids: {[item['id'] for item in item_list]}"
+            )
         raise

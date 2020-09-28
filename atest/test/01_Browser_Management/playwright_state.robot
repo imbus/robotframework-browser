@@ -92,6 +92,15 @@ Switch Browser
     ${third_url}    Get Url
     Get Title    matches    (?i)login
 
+Browser, Context and Page UUIDs
+    ${browser}=    New Browser
+    ${context}=    New Context
+    ${page}=    New Page
+    Should Start With    ${browser}    browser=
+    Should Start With    ${context}    context=
+    Should Start With    ${page}    page=
+    [Teardown]    Close Browser
+
 Switch Context
     ${first_context}    New Context
     New Page    ${LOGIN_URL}
@@ -114,6 +123,13 @@ Switch Page after popup
     Wait For Elements State    "Popped Up!"
     Switch Page    ${previous}
     Wait For Elements State    button#pops_up
+
+Switch New Page does not change page when current is new
+    New Page    ${LOGIN_URL}
+    New Page    ${FORM_URL}
+    Get Title    ==    prefilled_email_form.html
+    Switch Page    NEW
+    Get Title    ==    prefilled_email_form.html
 
 Set Viewport Size
     New Page
@@ -176,3 +192,23 @@ Close All Pages
     Close Page    ALL
     ${current}=    Switch Page    CURRENT
     Should Be Equal    ${current}    NO PAGE OPEN
+
+Closing Page/Contex/Browser Multiple Times Should Not Cause Errors
+    New Context
+    New Page
+    Close Page
+    Close Page
+    Close Context
+    Close Context
+    Close Browser
+    Close Browser
+
+Closing Page/Contex/Browser Multiple Times With All Should Not Cause Errors
+    New Context
+    New Page
+    Close Page    ALL
+    Close Page    ALL
+    Close Context    ALL    ALL
+    Close Context    ALL    ALL
+    Close Browser    ALL
+    Close Browser    ALL

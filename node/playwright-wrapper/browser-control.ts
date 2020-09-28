@@ -47,6 +47,7 @@ export async function takeScreenshot(
 ) {
     // Add the file extension here because the image type is defined by playwrights defaults
     const path = call.request.getPath() + '.png';
+    const fullPage = call.request.getFullpage();
     const selector = call.request.getSelector();
     if (selector) {
         const elem = await determineElement(state, selector, callback);
@@ -55,7 +56,7 @@ export async function takeScreenshot(
     } else {
         const page = state.getActivePage();
         exists(page, callback, 'Tried to take screenshot, but no page was open.');
-        await invokeOnPage(page, callback, 'screenshot', { path: path });
+        await invokeOnPage(page, callback, 'screenshot', { path: path, fullPage });
     }
     const message = 'Screenshot succesfully captured to: ' + path;
     callback(null, stringResponse(path, message));
@@ -91,4 +92,13 @@ export async function setOffline(
     const offline = call.request.getValue();
     await context.setOffline(offline);
     callback(null, emptyWithLog(`Set context to ${offline}`));
+}
+
+export async function reload(
+    call: ServerUnaryCall<Request.Empty>,
+    callback: sendUnaryData<Response.Empty>,
+    page?: Page,
+) {
+    await invokeOnPage(page, callback, 'reload');
+    callback(null, emptyWithLog('Reloaded page'));
 }

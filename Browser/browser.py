@@ -36,7 +36,7 @@ from .keywords import (
 )
 from .playwright import Playwright
 from .utils import AutoClosingLevel, is_falsy, is_same_keyword, logger
-from .version import VERSION
+from .version import __version__ as VERSION
 
 
 class Browser(DynamicCore):
@@ -116,7 +116,7 @@ class Browser(DynamicCore):
     Pages and browser tabs are the same.
 
     Typical usage could be:
-    | *** Test Cases ***
+    | *** Test Cases ***
     | Starting a browser with a page
     |     New Browser    chromium    headless=false
     |     New Context    viewport={'width': 1920, 'height': 1080}

@@ -64,10 +64,10 @@ async function _newBrowserContext(
         });
     }
     context.setDefaultTimeout(parseFloat(process.env.TIMEOUT || '10000'));
-    const c = { id: uuidv4(), c: context, pageStack: [] as IndexedPage[], options: options };
+    const c = { id: `context=${uuidv4()}`, c: context, pageStack: [] as IndexedPage[], options: options };
     c.c.on('page', (page) => {
         const timestamp = new Date().getTime() / 1000;
-        const newPage = { id: uuidv4(), p: page, timestamp: timestamp };
+        const newPage = { id: `page=${uuidv4()}`, p: page, timestamp: timestamp };
         c.pageStack.unshift(newPage);
     });
     return c;
@@ -76,7 +76,7 @@ async function _newBrowserContext(
 async function _newPage(context: BrowserContext): Promise<IndexedPage> {
     const newPage = await context.newPage();
     const timestamp = new Date().getTime() / 1000;
-    return { id: uuidv4(), p: newPage, timestamp: timestamp };
+    return { id: `page=${uuidv4()}`, p: newPage, timestamp: timestamp };
 }
 
 export class PlaywrightState {
@@ -220,7 +220,7 @@ export class BrowserState {
         this.name = name;
         this.browser = browser;
         this._contextStack = [];
-        this.id = uuidv4();
+        this.id = `browser=${uuidv4()}`;
     }
     private _contextStack: IndexedContext[];
     browser: Browser;
@@ -301,7 +301,7 @@ export async function closeBrowser(callback: sendUnaryData<Response.Empty>, open
     const id = openBrowsers.activeBrowser;
     const currentBrowser = openBrowsers.activeBrowser;
     if (currentBrowser === undefined) {
-        callback(new Error(`Tried to close Browser ${id}, was already closed.`), null);
+        callback(null, emptyWithLog('No browser open, doing nothing'));
         return;
     }
     await currentBrowser.close();
@@ -437,7 +437,12 @@ export async function switchPage(
         return;
     } else if (id === 'NEW') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
-        const latest = context.pageStack[0];
+        const latest = context.pageStack.reduce((acc, val) => {
+            if (acc === undefined || acc.timestamp < val.timestamp) {
+                return val;
+            }
+            return acc;
+        });
         exists(latest, callback, 'Tried to activate latest page but no pages were open in context.');
         await browserState.activatePage(latest);
         callback(null, stringResponse(previous, `Activated new page ${latest.id}`));

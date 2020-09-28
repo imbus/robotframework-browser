@@ -31,6 +31,13 @@ MouseOptionsDict = TypedDict(
 ViewportDimensions = TypedDict("ViewportDimensions", {"width": int, "height": int})
 
 
+class SelectionType(Enum):
+    ACTIVE = auto()
+    CURRENT = ACTIVE
+    ALL = auto()
+    ANY = ALL
+
+
 class DialogAction(Enum):
     accept = auto()
     dismiss = auto()
@@ -41,6 +48,11 @@ class CookieType(Enum):
     dict = dictionary
     string = auto()
     str = string
+
+
+CookieSameSite = Enum(
+    "CookieSameSite", {"Strict": "Strict", "Lax": "Lax", "None": "None"}
+)
 
 
 class RequestMethod(Enum):

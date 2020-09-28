@@ -130,7 +130,6 @@ class Getters(LibraryComponent):
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
-    @with_assertion_polling
     def get_text(
         self,
         selector: str,
@@ -143,11 +142,8 @@ class Getters(LibraryComponent):
 
         See `Assertions` for further details for the assertion arguments. Defaults to None.
         """
-        return verify_assertion(
-            self.get_property(selector, "innerText"),
-            assertion_operator,
-            assertion_expected,
-            f"Text {selector}",
+        return self.get_property(
+            selector, "innerText", assertion_operator, assertion_expected
         )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -185,7 +181,7 @@ class Getters(LibraryComponent):
             else:
                 raise AttributeError(f"Property '{property}' not found!")
             return verify_assertion(
-                value, assertion_operator, assertion_expected, f"Property {selector}"
+                value, assertion_operator, assertion_expected, f"Property {property}"
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -374,7 +370,10 @@ class Getters(LibraryComponent):
                 expected = [int(exp) for exp in expected]
 
             return list_verify_assertion(
-                selected, assertion_operator, expected, "Selected Options:",
+                selected,
+                assertion_operator,
+                expected,
+                "Selected Options:",
             )
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
@@ -509,9 +508,16 @@ class Getters(LibraryComponent):
 
         ``selector`` <str> Selector from which shall be retrieved. **Required**
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.GetElements(Request().ElementSelector(selector=selector))
-            return json.loads(response.json)
+        try:
+            with self.playwright.grpc_channel() as stub:
+                response = stub.GetElements(
+                    Request().ElementSelector(selector=selector)
+                )
+                return json.loads(response.json)
+        except AssertionError as error:
+            if "Could not find element with" in str(error):
+                return []
+            raise error
 
     @keyword(tags=["Getter", "Assertion", "PageContent"])
     @with_assertion_polling
